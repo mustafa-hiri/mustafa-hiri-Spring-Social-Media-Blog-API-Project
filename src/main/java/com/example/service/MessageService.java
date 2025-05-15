@@ -3,7 +3,6 @@ package com.example.service;
 import java.util.*;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.example.entity.Message;
 import com.example.repository.AccountRepository;
@@ -17,97 +16,91 @@ import com.example.repository.MessageRepository;
 @Service
 public class MessageService {
 
-    // Inject the message repository to interact with the message table
     @Autowired
     private MessageRepository messageRepository;
 
-    // Inject the account repository to verify that the user exists
     @Autowired
     private AccountRepository accountRepository;
 
     /**
-     * Creates a new message if it's valid:
-     * - message text is not null or blank
-     * - message text is under 255 characters
-     * - postedBy refers to an existing user
+     * Creates a new message if it's valid.
+     * Returns:
+     * - the saved message if successful
+     * - null if validation fails
      */
-    public ResponseEntity<?> creatMessage(Message message){
+    public Object creatMessage(Message message) {
         if (message == null ||
             message.getMessageText() == null ||
             message.getMessageText().isBlank() ||
             message.getMessageText().length() > 255 ||
             !accountRepository.existsById(message.getPostedBy())) {
-
-            return ResponseEntity.status(400).build(); // Invalid input
+            return null;
         }
 
         Message messageSaved = messageRepository.save(message);
-        return ResponseEntity.ok(messageSaved); // Return the saved message with ID
+        return messageSaved;
     }
 
     /**
-     * Returns all messages in the database.
-     * If none exist, returns an empty list.
+     * Returns all messages from the database.
      */
-    public ResponseEntity<List<Message>> getAllMessages(){
+    public List<Message> getAllMessages() {
         List<Message> messagesExist = messageRepository.findAll();
-        return ResponseEntity.ok(messagesExist);
+        return messagesExist;
     }
 
     /**
-     * Returns a specific message by its ID.
-     * If found, return it. If not, return 200 OK with no body.
+     * Returns a message by ID if it exists, or null otherwise.
      */
-    public ResponseEntity<?> getMessageById(Integer messageId){
+    public Object getMessageById(Integer messageId) {
         Optional<Message> messagesExist = messageRepository.findById(messageId);
         if (messagesExist.isPresent()) {
-            return ResponseEntity.ok(messagesExist);
+            return messagesExist;
         } else {
-            return ResponseEntity.ok().build();
+            return null;
         }
     }
 
     /**
      * Deletes a message if it exists.
-     * Always returns 200 OK. If deleted, return 1; if not found, return empty.
+     * Returns:
+     * - true if deleted
+     * - false if it didn't exist
      */
-    public ResponseEntity<?> deleteMessage(Integer messageId){
+    public Object deleteMessage(Integer messageId) {
         if (messageRepository.existsById(messageId)) {
             messageRepository.deleteById(messageId);
-            return ResponseEntity.ok(1); // 1 row deleted
+            return 1; // number of rows affected
         } else {
-            return ResponseEntity.ok().build(); // No message to delete
+            return null;
         }
     }
 
     /**
-     * Updates the text of an existing message.
-     * Only works if:
-     * - message exists
-     * - new text is valid (not blank, under 255 chars)
-     * Returns 1 if successful, or 400 if failed.
+     * Updates a message text if valid and exists.
+     * Returns:
+     * - true if updated
+     * - false if invalid input or not found
      */
-    public ResponseEntity<?> updateMessage(Integer messageId, String messageText){
+    public Object updateMessage(Integer messageId, String messageText) {
         Optional<Message> exsisteMessage = messageRepository.findById(messageId);
         if (exsisteMessage.isEmpty() ||
             messageText == null ||
             messageText.isBlank() ||
             messageText.length() > 255) {
-
-            return ResponseEntity.status(400).build(); // Invalid update
+            return false;
         }
 
         exsisteMessage.get().setMessageText(messageText);
         messageRepository.save(exsisteMessage.get());
-        return ResponseEntity.ok(1); // 1 row updated
+        return 1; // number of rows updated
     }
 
     /**
-     * Returns all messages posted by a specific user (accountId).
-     * If the user has no messages, returns an empty list.
+     * Returns all messages posted by a specific user.
      */
-    public ResponseEntity<List<Message>> getAllMessegaesUser(Integer accountId){
+    public List<Message> getAllMessegaesUser(Integer accountId) {
         List<Message> messagesExist = messageRepository.findByPostedBy(accountId);
-        return ResponseEntity.ok(messagesExist);
+        return messagesExist;
     }
 }
